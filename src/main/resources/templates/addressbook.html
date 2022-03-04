@@ -1,0 +1,135 @@
+<!DOCTYPE HTML>
+<html xmlns:th="https://www.thymeleaf.org">
+<head>
+    <title>Address Book</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"
+            integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+    <h1>Address Books</h1>
+    <form action="#" th:action="@{/addressbook}" th:object="${addressBook}" method="post" id="createAddressBookForm">
+        <input type="submit" value="Create address book"/>
+    </form>
+
+    <div id="addressBookContainer">
+        <div th:each="addressBook: ${addressBooks}">
+            <h2 th:text="'Address Book #' + ${addressBook.id}"></h2>
+
+            <h3>Add Buddy</h3>
+            <form action="#" th:action="@{/addressbook/__${addressBook.id}__/buddy}" th:object="${buddy}" method="post"
+                  class="addBuddyForm" th:attr="data-address-book-id=${addressBook.id}">
+                <div><label>Name <input type="text" th:field="*{name}" id="nameField" /></label></div>
+                <div><label>Address <input type="text" th:field="*{address}" id="addressField" /></label></div>
+                <div><label>Phone number <input type="text" th:field="*{phoneNumber}" id="phoneNumberField" /></label></div>
+                <input type="submit" value="Add buddy"/>
+            </form>
+
+            <h3>Buddies</h3>
+            <table>
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Address</th>
+                    <th>Phone Number</th>
+                </tr>
+                </thead>
+                <tbody class="addressBookBuddies" th:attr="data-address-book-id=${addressBook.id}">
+                <tr th:each="buddy: ${addressBook.buddies}">
+                    <td th:text="${buddy.name}"></td>
+                    <td th:text="${buddy.address}"></td>
+                    <td th:text="${buddy.phoneNumber}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="application/javascript">
+        function createTableRowForBuddy(buddy) {
+          return $("<tr></tr>")
+            .append($("<td></td>").text(buddy.name))
+            .append($("<td></td>").text(buddy.address))
+            .append($("<td></td>").text(buddy.phoneNumber));
+        }
+
+        function addBuddySubmitHandler(event) {
+          let $target = $(event.target);
+          let addressBookId = $target.attr("data-address-book-id");
+          let name = $target.find("#nameField").val();
+          let address = $target.find("#addressField").val();
+          let phoneNumber = $target.find("#phoneNumberField").val();
+
+          $.ajax({
+            type: "POST",
+            url: "http://localhost:8080/api/addressbook/" + addressBookId + "/buddy",
+            contentType: "application/json",
+            data: JSON.stringify({
+              name: name,
+              address: address,
+              phoneNumber: phoneNumber,
+            }),
+          }).then((data) => {
+            let tbody = $(
+              ".addressBookBuddies[data-address-book-id=" + addressBookId + "]"
+            );
+
+            tbody.append(createTableRowForBuddy(data));
+          });
+
+          event.preventDefault();
+        }
+
+        $(document).ready(() => {
+          $("#createAddressBookForm").submit((event) => {
+            $.ajax({
+              type: "POST",
+              url: "http://localhost:8080/api/addressbook",
+            }).then((data) => {
+              let tbody = $('<tbody class="addressBookBuddies"></tbody>').attr(
+                "data-address-book-id",
+                data.id
+              );
+              let addressBookElement = $("<div></div>")
+                .append($("<h2></h2>").text("Address Book #" + data.id))
+                .append("<h3>Add Buddy</h3>")
+                .append(
+                  $('<form action="#" class="addBuddyForm"></form>')
+                    .attr("data-address-book-id", data.id)
+                    .submit(addBuddySubmitHandler)
+                    .append(
+                      '<div><label>Name <input type="text" id="nameField" /></label></div>'
+                    )
+                    .append(
+                      '<div><label>Address <input type="text" id="addressField" /></label></div>'
+                    )
+                    .append(
+                      '<div><label>Phone number <input type="text" id="phoneNumberField" /></label></div>'
+                    )
+                    .append('<input type="submit" value="Add buddy"/>')
+                )
+                .append("<h3>Buddies</h3>")
+                .append(
+                  $("<table></table>")
+                    .append(
+                      "<thead><tr><th>Name</th><th>Address</th><th>Phone Number</th></tr></thead>"
+                    )
+                    .append(tbody)
+                );
+
+              for (let buddy of data.buddies) {
+                tbody.append(createTableRowForBuddy(buddy));
+              }
+
+              $("#addressBookContainer").append(addressBookElement);
+            });
+
+            event.preventDefault();
+          });
+
+          $(".addBuddyForm").submit(addBuddySubmitHandler);
+        });
+    </script>
+</body>
+</html>
