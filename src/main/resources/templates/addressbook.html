@@ -63,7 +63,7 @@
 
           $.ajax({
             type: "POST",
-            url: "http://localhost:8080/api/addressbook/" + addressBookId + "/buddy",
+            url: window.location.origin + "/api/addressbook/" + addressBookId + "/buddy",
             contentType: "application/json",
             data: JSON.stringify({
               name: name,
@@ -85,7 +85,7 @@
           $("#createAddressBookForm").submit((event) => {
             $.ajax({
               type: "POST",
-              url: "http://localhost:8080/api/addressbook",
+              url: window.location.origin + "/api/addressbook",
             }).then((data) => {
               let tbody = $('<tbody class="addressBookBuddies"></tbody>').attr(
                 "data-address-book-id",
